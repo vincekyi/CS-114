@@ -10,6 +10,23 @@ The port number is passed as an argument */
 #include "Ping.h"
 #include "Pong.h"
 
+/*void findmyip(char ip[]){
+	system("./findip.sh");
+	
+	string line;
+	ifstream inp;
+	
+	inp.open("my_ip");
+	
+	char tp[256];
+	bzero(tp,256);
+	
+	inp >> ip;
+	inp.close();	
+	//printf(ip);
+}*/
+
+void dostuff(int newsockfd, int portno); /* function prototype */
 void error(const char *msg)
 {
     perror(msg);
@@ -19,13 +36,11 @@ void error(const char *msg)
 int main(int argc, char *argv[])
 {
     /* Variable declaration */
-    int sockfd, newsockfd, portno;
+    int sockfd, newsockfd, portno, pid;
     socklen_t clilen;
-    char buffer[256];
+    
     struct sockaddr_in serv_addr, cli_addr;
-    int n;
-    ping_t receivedping;
-    pong_t responsepong;
+    
 
     /* Usage check */
     if (argc < 2) {
@@ -51,12 +66,37 @@ int main(int argc, char *argv[])
     /* listen/accept (blocking call) */
     listen(sockfd,5);
     clilen = sizeof(cli_addr);
-    newsockfd = accept(sockfd,
-                (struct sockaddr *) &cli_addr,
-                &clilen);
-    if (newsockfd < 0)
-         error("ERROR on accept");
+    
+    /* Server Infinite Loop */
+    while (1) {
+		newsockfd = accept(sockfd,
+					(struct sockaddr *) &cli_addr,
+					&clilen);
+		if (newsockfd < 0)
+			error("ERROR on accept");
+			
+		pid = fork();
+		
+		if (pid < 0)
+			error("Error on fork");
+		if (pid == 0) {
+			close(sockfd);
+			dostuff(newsockfd, portno);
+			exit(0);
+		}
+		else close(newsockfd);
+	}
+	close(sockfd);
+	return 0;
+}
 
+void dostuff (int newsockfd, int portno){
+	
+	char buffer[256];
+	int n;
+    ping_t receivedping;
+    pong_t responsepong;
+	
     /* Read from socket */
     bzero(buffer,256);
     n = read(newsockfd,&receivedping,sizeof(ping_t));
@@ -88,7 +128,4 @@ int main(int argc, char *argv[])
     printf("IP: %d\n", responsepong.ipaddress);
     printf("Files: %d\n", responsepong.numFiles);
     printf("Kilobytes: %d\n", responsepong.numKilobytes);
-    close(newsockfd);
-    close(sockfd);
-    return 0;
 }
