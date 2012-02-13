@@ -8,6 +8,7 @@ The port number is passed as an argument */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "Ping.h"
+#include "Pong.h"
 
 void error(const char *msg)
 {
@@ -24,6 +25,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr, cli_addr;
     int n;
     ping_t receivedping;
+    pong_t responsepong;
 
     /* Usage check */
     if (argc < 2) {
@@ -64,8 +66,28 @@ int main(int argc, char *argv[])
     printf("payloadDescriptor: %d\n", receivedping.desc.payloadDescriptor);
     printf("TTL: %d\n", receivedping.desc.TTL);
     printf("Hops: %d\n", receivedping.desc.hops);
-    n = write(newsockfd,"I got your message",18);
+    
+    /* Write to socket */
+    strncpy(responsepong.desc.descriptorID,receivedping.desc.descriptorID,sizeof(responsepong.desc.descriptorID));
+    responsepong.desc.descriptorID[6] = 'o';
+    responsepong.desc.payloadDescriptor = PONG;
+    responsepong.desc.TTL = 1;
+    responsepong.desc.hops = 0;
+    responsepong.port = portno;
+    responsepong.ipaddress = 0;
+    responsepong.numFiles = 1;
+    responsepong.numKilobytes = 1;
+    n = write(newsockfd,&responsepong,sizeof(pong_t));
     if (n < 0) error("ERROR writing to socket");
+    printf("\nPong sent\n");
+    printf("descriptorID: %s\n", responsepong.desc.descriptorID);
+    printf("payloadDescriptor: %d\n", responsepong.desc.payloadDescriptor);
+    printf("TTL: %d\n", responsepong.desc.TTL);
+    printf("Hops: %d\n", responsepong.desc.hops);
+    printf("Port: %d\n", responsepong.port);
+    printf("IP: %d\n", responsepong.ipaddress);
+    printf("Files: %d\n", responsepong.numFiles);
+    printf("Kilobytes: %d\n", responsepong.numKilobytes);
     close(newsockfd);
     close(sockfd);
     return 0;

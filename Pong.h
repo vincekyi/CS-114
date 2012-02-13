@@ -3,7 +3,7 @@
 #define _PONG_H_
 
 typedef struct pong {
-	struct descriptor;
+	struct descriptor desc;
 	uint16_t port; 		/*	The TCP port number on which the
 					responding host	can accept incoming
 					Gnutella connections.

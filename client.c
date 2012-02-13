@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include "Ping.h"
+#include "Pong.h"
 
 void error(const char *msg)
 {
@@ -21,10 +22,10 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
     ping_t testping;
-        char descriptorID[] = "Test Ping";
+    char descriptorID[] = "Test Ping";
+    pong_t responsepong;
 
     /* Usage check */
-    char buffer[256];
     if (argc < 3) {
        fprintf(stderr,"usage %s hostname port\n", argv[0]);
        exit(0);
@@ -63,16 +64,23 @@ int main(int argc, char *argv[])
     printf("Hops: %d\n", testping.desc.hops);
 
     /* Write to socket */
-    n = write(sockfd,&testping,sizeof(testping));
+    n = write(sockfd,&testping,sizeof(ping_t));
     if (n < 0) 
          error("ERROR writing to socket");
 
     /* Read from socket */
-    bzero(buffer,256);
-    n = read(sockfd,buffer,255);
+    n = read(sockfd,&responsepong,sizeof(pong_t));
     if (n < 0) 
          error("ERROR reading from socket");
-    printf("%s\n",buffer);
+    printf("\nPong received\n");
+    printf("descriptorID: %s\n", responsepong.desc.descriptorID);
+    printf("payloadDescriptor: %d\n", responsepong.desc.payloadDescriptor);
+    printf("TTL: %d\n", responsepong.desc.TTL);
+    printf("Hops: %d\n", responsepong.desc.hops);
+    printf("Port: %d\n", responsepong.port);
+    printf("IP: %d\n", responsepong.ipaddress);
+    printf("Files: %d\n", responsepong.numFiles);
+    printf("Kilobytes: %d\n", responsepong.numKilobytes);
     close(sockfd);
     return 0;
 }
